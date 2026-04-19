@@ -1,4 +1,4 @@
-name: Build Expo APK (FAST pnpm FIXED)
+name: Build Expo APK (FIXED + FAST)
 
 on:
   workflow_dispatch:
@@ -17,40 +17,32 @@ jobs:
         with:
           node-version: 20
 
-      # ---------- ENABLE PNPM (IMPORTANT FIX) ----------
-      - name: Enable Corepack (pnpm)
+      - name: Enable pnpm (Corepack)
         run: |
           corepack enable
           corepack prepare pnpm@9 --activate
           pnpm -v
 
-      # ---------- JAVA ----------
+      # ---------- INSTALL JS ----------
+      - name: Install Dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      # ---------- EXPO PREBUILD (CREATES ANDROID) ----------
+      - name: Expo Prebuild
+        run: npx expo prebuild --platform android
+
+      # ---------- JAVA (NOW SAFE because android exists) ----------
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
-          cache: gradle
 
-      # ---------- CACHE ----------
-      - name: Cache pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ~/.pnpm-store
-          key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-
-      # ---------- INSTALL ----------
-      - name: Install Dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      # ---------- EXPO ----------
-      - name: Expo Prebuild
-        run: npx expo prebuild --platform android
-
-      - name: Make Gradlew executable
+      # ---------- MAKE GRADLE EXECUTABLE ----------
+      - name: Fix Gradle Permissions
         run: chmod +x android/gradlew
 
-      # ---------- BUILD RELEASE ----------
+      # ---------- BUILD RELEASE APK ----------
       - name: Build Release APK
         run: |
           cd android
