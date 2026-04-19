@@ -1,4 +1,4 @@
-name: Build Tap A Cursor APK (Release + Debug Logs)
+name: Build Tap A Cursor APK (Release Stable)
 
 on:
   workflow_dispatch:
@@ -25,31 +25,31 @@ jobs:
           corepack prepare pnpm@9 --activate
           pnpm -v
 
-      # ---------------- INSTALL DEPS ----------------
+      # ---------------- INSTALL DEPENDENCIES ----------------
       - name: Install Dependencies
         run: pnpm install --no-frozen-lockfile
 
-      # ---------------- EXPO EXPORT CHECK (CATCH ERRORS EARLY) ----------------
-      - name: Expo Precheck (JS bundle test)
+      # ---------------- JS VALIDATION (CATCH ERRORS EARLY) ----------------
+      - name: Expo JS Export Check
         run: npx expo export --platform android
 
       # ---------------- PREBUILD ANDROID ----------------
       - name: Expo Prebuild Android
         run: npx expo prebuild --platform android
 
-      # ---------------- JAVA SETUP ----------------
+      # ---------------- JAVA ----------------
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      # ---------------- GRADLE PERMISSION FIX ----------------
+      # ---------------- GRADLE PERMISSIONS ----------------
       - name: Make Gradlew executable
         run: chmod +x android/gradlew
 
-      # ---------------- RELEASE BUILD (WITH DEBUG INFO) ----------------
-      - name: Build Release APK (WITH DEBUG LOGS)
+      # ---------------- RELEASE BUILD ----------------
+      - name: Build Release APK (FULL DEBUG LOGS)
         run: |
           cd android
           ./gradlew assembleRelease --stacktrace --info
