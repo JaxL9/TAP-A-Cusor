@@ -18,22 +18,23 @@ jobs:
         with:
           node-version: 20
 
-      # ---------------- PNPM (FIXED PROPERLY) ----------------
+      # ---------------- PNPM FIX ----------------
       - name: Enable Corepack (pnpm)
         run: |
           corepack enable
           corepack prepare pnpm@9 --activate
-          pnpm -v
 
-      # ---------------- INSTALL DEPENDENCIES ----------------
+      # ---------------- CLEAN INSTALL ----------------
       - name: Install Dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: |
+          rm -rf node_modules
+          pnpm install --no-frozen-lockfile --shamefully-hoist
 
-      # ---------------- JS VALIDATION (CATCH ERRORS EARLY) ----------------
-      - name: Expo JS Export Check
+      # ---------------- FAIL FAST JS CHECK ----------------
+      - name: Expo Export (Catch JS Errors Early)
         run: npx expo export --platform android
 
-      # ---------------- PREBUILD ANDROID ----------------
+      # ---------------- PREBUILD ----------------
       - name: Expo Prebuild Android
         run: npx expo prebuild --platform android
 
@@ -44,17 +45,17 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # ---------------- GRADLE PERMISSIONS ----------------
+      # ---------------- GRADLE PERMISSION ----------------
       - name: Make Gradlew executable
         run: chmod +x android/gradlew
 
       # ---------------- RELEASE BUILD ----------------
-      - name: Build Release APK (FULL DEBUG LOGS)
+      - name: Build Release APK
         run: |
           cd android
           ./gradlew assembleRelease --stacktrace --info
 
-      # ---------------- UPLOAD APK ----------------
+      # ---------------- UPLOAD ----------------
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
