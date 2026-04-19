@@ -1,4 +1,4 @@
-name: Tap A Cursor - Stable Release Build
+name: Build Tap A Cursor APK
 
 on:
   workflow_dispatch:
@@ -8,57 +8,42 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # ---------------- CHECKOUT ----------------
-      - name: Checkout Code
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      # ---------------- NODE ----------------
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # ---------------- PNPM FIX ----------------
-      - name: Enable Corepack (pnpm)
-        run: |
-          corepack enable
-          corepack prepare pnpm@9 --activate
+      - name: Enable pnpm
+        run: corepack enable
 
-      # ---------------- CLEAN INSTALL ----------------
-      - name: Install Dependencies
+      - name: Clean install dependencies
         run: |
           rm -rf node_modules
-          pnpm install --no-frozen-lockfile --shamefully-hoist
+          pnpm install --no-frozen-lockfile
 
-      # ---------------- VALIDATION (FIXED) ----------------
-      - name: Validate Expo Project
-        run: npx expo-doctor
+      - name: Auto-fix Expo dependencies
+        run: npx expo install --fix
 
-      # ---------------- JS BUNDLE CHECK ----------------
-      - name: Expo Export (fail fast)
-        run: npx expo export --platform android
+      - name: Prebuild Android
+        run: npx expo prebuild --platform android --clean
 
-      # ---------------- PREBUILD ----------------
-      - name: Expo Prebuild Android
-        run: npx expo prebuild --platform android
-
-      # ---------------- JAVA ----------------
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      # ---------------- GRADLE ----------------
       - name: Build Release APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease --stacktrace --info
+          ./gradlew assembleRelease
 
-      # ---------------- OUTPUT ----------------
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: TAP-A-CURSOR-RELEASE
+          name: tap-a-cursor-apk
           path: android/app/build/outputs/apk/release/*.apk
