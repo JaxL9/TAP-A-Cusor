@@ -59,7 +59,7 @@ export function TapButton() {
         <Animated.View style={[styles.buttonWrapper, animStyle]}>
           <View style={[styles.circle, isComboActive && { borderColor: comboColor }]}>
             <Image
-              source={require('@/assets/images/tap_cursor.png')}
+              source={require('@/assets/images/tap_character.png')}
               style={styles.image}
               contentFit="contain"
               transition={200}
