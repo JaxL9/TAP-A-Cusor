@@ -1,4 +1,4 @@
-name: Build Expo APK (FIXED + FAST)
+name: Build Expo APK (pnpm)
 
 on:
   workflow_dispatch:
@@ -11,46 +11,37 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # ---------- NODE ----------
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'pnpm'
 
-      - name: Enable pnpm (Corepack)
-        run: |
-          corepack enable
-          corepack prepare pnpm@9 --activate
-          pnpm -v
-
-      # ---------- INSTALL JS ----------
-      - name: Install Dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      # ---------- EXPO PREBUILD (CREATES ANDROID) ----------
-      - name: Expo Prebuild
-        run: npx expo prebuild --platform android
-
-      # ---------- JAVA (NOW SAFE because android exists) ----------
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      # ---------- MAKE GRADLE EXECUTABLE ----------
-      - name: Fix Gradle Permissions
-        run: chmod +x android/gradlew
+      - name: Install Dependencies
+        run: pnpm install --no-frozen-lockfile
 
-      # ---------- BUILD RELEASE APK ----------
+      - name: Prebuild Android
+        run: pnpm expo prebuild --platform android --clean
+
       - name: Build Release APK
         run: |
           cd android
-          ./gradlew assembleRelease --build-cache --parallel --daemon
+          chmod +x gradlew
+          ./gradlew assembleRelease
 
-      # ---------- UPLOAD ----------
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: APK-RELEASE
+          name: TAP-A-CURSOR-RELEASE-APK
           path: android/app/build/outputs/apk/release/*.apk
