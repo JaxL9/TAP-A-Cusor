@@ -1,4 +1,4 @@
-name: Fast APK Build
+name: Build Expo APK (FAST pnpm)
 
 on:
   workflow_dispatch:
@@ -8,34 +8,61 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - uses: actions/setup-node@v4
+      # ---------- NODE + PNPM ----------
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
 
-      - uses: actions/setup-java@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          version: 9
 
-      - run: pnpm install --frozen-lockfile
+      # ---------- JAVA ----------
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle   # 🔥 HUGE SPEED BOOST
 
-      - run: pnpm expo prebuild --platform android
+      # ---------- PNPM CACHE ----------
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-${{ runner.os }}-
 
-      - run: npx expo export
+      - name: Install Dependencies
+        run: pnpm install --no-frozen-lockfile
 
-      - run: |
+      # ---------- EXPO PREBUILD (FAST MODE) ----------
+      - name: Expo Prebuild (NO CLEAN)
+        run: npx expo prebuild --platform android
+
+      - name: Make Gradlew executable
+        run: chmod +x android/gradlew
+
+      # ---------- SPEED UP GRADLE ----------
+      - name: Build Release APK (FAST)
+        run: |
           cd android
-          chmod +x gradlew
-          ./gradlew assembleRelease --parallel
+          ./gradlew assembleRelease \
+            --build-cache \
+            --parallel \
+            --daemon \
+            --max-workers=4
 
-      - uses: actions/upload-artifact@v4
+      # ---------- OUTPUT ----------
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
-          name: APK
+          name: APK-RELEASE
           path: android/app/build/outputs/apk/release/*.apk
