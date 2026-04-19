@@ -10,48 +10,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # ⚡ pnpm (fastest package manager)
       - uses: pnpm/action-setup@v4
         with:
           version: 9
 
-      # ⚡ Node with cache
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
 
-      # ⚡ Java for Gradle
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
 
-      # ⚡ Install deps (cached)
-      - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile
 
-      # ⚡ ONLY prebuild if android folder doesn't exist
-      - name: Prebuild (skip if exists)
-        run: |
-          if [ ! -d "android" ]; then
-            pnpm expo prebuild --platform android
-          fi
+      - run: pnpm expo prebuild --platform android
 
-      # ⚡ Bundle JS (optimized)
-      - name: Bundle App
-        run: npx expo export
+      - run: npx expo export
 
-      # ⚡ Build APK FAST
-      - name: Build APK
-        run: |
+      - run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease --parallel --build-cache
+          ./gradlew assembleRelease --parallel
 
-      # ⚡ Upload result
       - uses: actions/upload-artifact@v4
         with:
-          name: Click A Cursor
+          name: APK
           path: android/app/build/outputs/apk/release/*.apk
