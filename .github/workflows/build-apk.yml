@@ -1,4 +1,4 @@
-name: Build APK
+name: Build Expo APK (pnpm)
 on: workflow_dispatch
 
 jobs:
@@ -8,12 +8,17 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9 # Use the version matching your pnpm-lock.yaml
+
+      - name: Setup Node & Java
         uses: actions/setup-node@v4
         with:
-          node-version: 18
-          cache: 'npm'
-
+          node-version: 20
+          cache: 'pnpm'
+      
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -21,24 +26,20 @@ jobs:
           java-version: '17'
 
       - name: Install Dependencies
-        run: |
-          # This forces npm to ignore version conflicts
-          npm install --legacy-peer-deps || npm install --force
+        run: pnpm install --no-frozen-lockfile
 
-      - name: Build APK
+      - name: Generate Android Folder (Prebuild)
+        # This creates the 'android' folder that is missing from your repo
+        run: pnpm expo prebuild --platform android --clean
+
+      - name: Build APK with Gradle
         run: |
-          # If the android folder exists, go inside and build
-          if [ -d "android" ]; then
-            cd android
-            chmod +x gradlew
-            ./gradlew assembleDebug
-          else
-            chmod +x gradlew
-            ./gradlew assembleDebug
-          fi
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: TAP-A-Cusor-APK
-          path: "**/build/outputs/apk/debug/*.apk"
+          path: android/app/build/outputs/apk/debug/*.apk
