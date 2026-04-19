@@ -1,4 +1,4 @@
-name: Build Expo APK (pnpm)
+name: Build Tap A Cursor APK (Release + Debug Logs)
 
 on:
   workflow_dispatch:
@@ -8,40 +8,55 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # ---------------- CHECKOUT ----------------
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
+      # ---------------- NODE ----------------
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
 
+      # ---------------- PNPM (FIXED PROPERLY) ----------------
+      - name: Enable Corepack (pnpm)
+        run: |
+          corepack enable
+          corepack prepare pnpm@9 --activate
+          pnpm -v
+
+      # ---------------- INSTALL DEPS ----------------
+      - name: Install Dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      # ---------------- EXPO EXPORT CHECK (CATCH ERRORS EARLY) ----------------
+      - name: Expo Precheck (JS bundle test)
+        run: npx expo export --platform android
+
+      # ---------------- PREBUILD ANDROID ----------------
+      - name: Expo Prebuild Android
+        run: npx expo prebuild --platform android
+
+      # ---------------- JAVA SETUP ----------------
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      - name: Install Dependencies
-        run: pnpm install --no-frozen-lockfile
+      # ---------------- GRADLE PERMISSION FIX ----------------
+      - name: Make Gradlew executable
+        run: chmod +x android/gradlew
 
-      - name: Prebuild Android
-        run: pnpm expo prebuild --platform android --clean
-
-      - name: Build Release APK
+      # ---------------- RELEASE BUILD (WITH DEBUG INFO) ----------------
+      - name: Build Release APK (WITH DEBUG LOGS)
         run: |
           cd android
-          chmod +x gradlew
-          ./gradlew assembleRelease
+          ./gradlew assembleRelease --stacktrace --info
 
+      # ---------------- UPLOAD APK ----------------
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: TAP-A-CURSOR-RELEASE-APK
+          name: TAP-A-CURSOR-RELEASE
           path: android/app/build/outputs/apk/release/*.apk
