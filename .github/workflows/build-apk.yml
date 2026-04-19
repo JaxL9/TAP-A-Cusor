@@ -19,7 +19,7 @@ jobs:
           node-version: 20
 
       # ---------------- PNPM ----------------
-      - name: Enable Corepack (pnpm)
+      - name: Enable Corepack
         run: |
           corepack enable
           corepack prepare pnpm@9 --activate
@@ -31,13 +31,16 @@ jobs:
           rm -rf .expo
           pnpm install --no-frozen-lockfile --shamefully-hoist
 
-      # ---------------- EXPO AUTO FIX ----------------
+      # ---------------- FORCE FIX EXPO ----------------
       - name: Fix Expo dependencies
         run: npx expo install --fix
 
-      # ---------------- VALIDATE (NON-BLOCKING) ----------------
-      - name: Expo pre-check (non-blocking)
-        run: npx expo-doctor || true
+      # ---------------- GUARANTEED MISSING MODULE FIX ----------------
+      - name: Install required Expo modules
+        run: |
+          npx expo install expo-auth-session
+          npx expo install expo-web-browser
+          npx expo install expo-av
 
       # ---------------- PREBUILD ----------------
       - name: Prebuild Android
@@ -50,7 +53,7 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # ---------------- GRADLE BUILD ----------------
+      # ---------------- RELEASE BUILD ----------------
       - name: Build Release APK
         run: |
           cd android
