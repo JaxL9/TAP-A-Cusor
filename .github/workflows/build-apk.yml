@@ -1,31 +1,27 @@
-name: "Build TAP-A-Cusor APK"
-on: [push, pull_request, workflow_dispatch]
+name: "Godot APK Build"
+on: 
+  workflow_dispatch: # Allows manual trigger from the Actions tab
 
 jobs:
   export-android:
-    name: Export Android APK
+    name: Build Godot APK
     runs-on: ubuntu-latest
-    container:
-      image: barichello/godot-ci:4.2.1 # Matches Godot version if applicable
     steps:
-      - name: Checkout
+      - name: Checkout Source
         uses: actions/checkout@v4
         with:
           repository: JaxL9/TAP-A-Cusor
-          lfs: true
+          path: godot-project
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Godot Android Export
+        uses: dulvui/godot-android-export@v4.0.0
+        with:
+          working-directory: godot-project
+          # Matches typical Godot 4.x versions
+          godot-version: 4.2.1 
 
-      - name: Build APK
-        run: |
-          mkdir -v -p build/android
-          # Note: Requires an 'Android' export preset in the Godot project
-          godot --headless --verbose --export-debug "Android" build/android/TAP-A-Cusor.apk
-
-      - name: Upload Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: tap-a-cusor-apk
-          path: build/android/TAP-A-Cusor.apk
-
+          name: TAP-A-Cusor-APK
+          path: godot-project/**/*.apk
